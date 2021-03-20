@@ -7,6 +7,7 @@ import com.rabbitmq.client.ConnectionFactory;
 
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Scanner;
 import java.util.concurrent.TimeoutException;
 
 public class ExchangeSenderApp {
@@ -15,15 +16,28 @@ public class ExchangeSenderApp {
     public static void main(String[] args) throws Exception { //IOException, TimeoutException {
         ConnectionFactory connectionFactory = new ConnectionFactory();
         connectionFactory.setHost("localhost");
+        String inputText = "";
+        Scanner scr = new Scanner(System.in);
+
 
         try (Connection connection = connectionFactory.newConnection();
              Channel channel = connection.createChannel()
         ){ channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.DIRECT);
+            while (!inputText.equals("exit")) {
+                System.out.println("Введите вашу статью ф формате: [тема] [статья]");
+                System.out.println("Возможные темы: java, php, js, C++");
+                System.out.println("Для выхода напишите exit");
+                inputText = scr.nextLine();
+                int i = inputText.indexOf(" ");
+                if (i > 0) {
+                    String direct = inputText.substring(0, i);
+                    String myMessage = inputText.substring(i + 1);
 
-            String message = "SS";
-            channel.basicPublish(EXCHANGE_NAME, "php", null, message.getBytes(StandardCharsets.UTF_8));
-            System.out.println("сообщение " + message + " отправлено");
-
+                    channel.basicPublish(EXCHANGE_NAME, direct /*"php"*/, null, myMessage.getBytes(StandardCharsets.UTF_8));
+                    System.out.println("Статья " + myMessage + " отправлена");
+                }
+            }
         }
+        scr.close();
     }
 }

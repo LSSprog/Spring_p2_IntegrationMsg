@@ -3,6 +3,7 @@ package ss.msg.consol.sub;
 import com.rabbitmq.client.*;
 
 import java.io.IOException;
+import java.util.Scanner;
 import java.util.concurrent.TimeoutException;
 
 public class ExchangeReceiverApp {
@@ -14,26 +15,31 @@ public class ExchangeReceiverApp {
         Connection connection = connectionFactory.newConnection();
         Channel channel = connection.createChannel();
         channel.exchangeDeclare(EXCHANGE_NAME, BuiltinExchangeType.DIRECT);
+        Scanner scr = new Scanner(System.in);
 
         String queueName = channel.queueDeclare().getQueue();
         System.out.println("Имя очереди: " + queueName);
 
-        channel.queueBind(queueName, EXCHANGE_NAME, "php");
-        System.out.println("Ждём сообщения...");
+        System.out.println("Выберите тему подписки, введите комнду в формате: [set_topic] [тема]");
+        System.out.println("Возможные темы: java, php, js, C++");
+        String cmd = "";
+
+        do {
+            cmd = scr.nextLine();
+        } while (!cmd.startsWith("set_topic"));
+
+            int i = cmd.indexOf(" ");
+            String direct = cmd.substring(i + 1);
+            scr.close();
+
+            channel.queueBind(queueName, EXCHANGE_NAME, direct);
+            System.out.println("Ждём новых статей по интересующей вас теме..." + direct);
 
         DeliverCallback deliverCallback = (consumerTag, delivery) -> {
             String message = new String(delivery.getBody(), "UTF-8");
-            System.out.println("Получено сообщение: " + message);
+            System.out.println("Получена новая статья: " + message);
         };
         channel.basicConsume(queueName, true, deliverCallback, consumerTag -> { });
 
     }
 }
-//DeliverCallback deliverCallback = (consumerTag, delivery) -> {
-//            String message = new String(delivery.getBody(), "UTF-8");
-////            System.out.println(Thread.currentThread().getName());
-//            System.out.println(" [x] Received '" + message + "'");
-//        };
-//
-////        System.out.println(Thread.getAllStackTraces().keySet());
-//        channel.basicConsume(queueName, true, deliverCallback, consumerTag -> { });
